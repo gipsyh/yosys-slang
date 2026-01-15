@@ -200,13 +200,10 @@ public:
 		default:                                netlist.add_diag(diag::AssertionUnsupported, statement.sourceRange); return;
 		}
 
-		RTLIL::IdString cell_name;
+		std::string cell_name;
 
-		if (containing_block &&
-				unwrap_statement(containing_block->tryGetStatement()) == &statement &&
-				!containing_block->name.empty()) {
-			// If we are the sole statement in a block, use the block's label
-			cell_name = netlist.id(*containing_block);
+		if (statement.syntax && statement.syntax->label) {
+			cell_name = RTLIL::escape_id(std::string(statement.syntax->label->name.valueText()));
 		} else {
 			cell_name = netlist.new_id();
 		}
