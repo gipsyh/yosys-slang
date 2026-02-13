@@ -123,6 +123,7 @@ DiagCode ErrorNonconstantInitialEval(DiagSubsystem::Netlist, 1071);
 DiagCode DeprecatedOption(DiagSubsystem::Netlist, 1072);
 DiagCode GuessingInputPort(DiagSubsystem::Netlist, 1073);
 DiagCode UnsupportedSystemTask(DiagSubsystem::Netlist, 1074);
+DiagCode ConcurrentAssertionInClockedBlock(DiagSubsystem::Netlist, 1066);
 
 DiagGroup unsynthesizable("unsynthesizable",
 		{IffUnsupported, GenericTimingUnsyn, BothEdgesUnsupported, ExpectingIfElseAload,
@@ -316,6 +317,10 @@ void setup_messages(slang::DiagnosticEngine &engine)
 
 	engine.setMessage(UnsupportedSystemTask, "unsupported system task '{}'");
 	engine.setSeverity(UnsupportedSystemTask, DiagnosticSeverity::Error);
+
+	engine.setMessage(ConcurrentAssertionInClockedBlock, "concurrent assertion cannot appear inside a clocked procedural block");
+	engine.setSeverity(ConcurrentAssertionInClockedBlock, DiagnosticSeverity::Error);
+
 	// clang-format on
 }
 }; // namespace diag
