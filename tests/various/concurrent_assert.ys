@@ -1,7 +1,7 @@
 read_slang concurrent_assert.sv
 
 # Test basic concurrent assertions exist
-select -assert-count 16 t:$check
+select -assert-count 17 t:$check
 
 # Test m_concurrent_assert: posedge clk, no disable iff
 select -assert-count 1 m_concurrent_assert/t:$check
@@ -48,3 +48,8 @@ select -assert-count 1 m_overlapped_implication_disable_iff/t:$check r:FLAVOR=as
 # Test m_overlapped_implication_cover: cover with a |-> b
 select -assert-count 1 m_overlapped_implication_cover/t:$check
 select -assert-count 1 m_overlapped_implication_cover/t:$check r:FLAVOR=cover %i
+
+# Test m_stable_assert: $stable(data) with disable iff, labeled
+select -assert-count 1 m_stable_assert/t:$check
+select -assert-count 1 m_stable_assert/t:$check r:FLAVOR=assert %i
+select -assert-count 1 m_stable_assert/t:$check n:*stable_assert %i

@@ -64,3 +64,8 @@ module m_concurrent_past (input clk, input rst_n, input [7:0] index);
 	past_assert2: assert property (@(posedge clk) disable iff (!rst_n) $past(regs[index], 1) == past1_reg);
 	past_assert3: assert property (@(posedge clk) disable iff (!rst_n || !$past(rst_n)) $past(regs[index], 2) == past2_reg);
 endmodule
+
+module m_stable_assert(input clk, input rst_n, input [7:0] data);
+	// $stable(data) is equivalent to data == $past(data)
+	stable_assert: assert property (@(posedge clk) disable iff (!rst_n) $stable(data));
+endmodule

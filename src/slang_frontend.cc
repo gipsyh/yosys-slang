@@ -1248,6 +1248,11 @@ RTLIL::SigSpec EvalContext::operator()(ast::Expression const &expr)
 				} else if (name == "$signed" || name == "$unsigned") {
 					require(expr, call.arguments().size() == 1);
 					ret = (*this)(*call.arguments()[0]);
+				} else if (name == "$stable") {
+					require(expr, call.arguments().size() == 1);
+					auto current = (*this)(*call.arguments()[0]);
+					auto past = handle_past(*this, call);
+					ret = netlist.Eq(current, past);
 				} else {
 					auto &d = netlist.add_diag(diag::UnsupportedSystemTask, expr.sourceRange);
 					d << name;
