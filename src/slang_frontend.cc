@@ -1229,6 +1229,20 @@ RTLIL::SigSpec EvalContext::operator()(ast::Expression const &expr)
 					auto arg = call.arguments()[0];
 					auto sig = (*this)(*arg);
 					ret = netlist.CountOnes(sig, (int)call.type->getBitstreamWidth());
+				} else if (name == "$onehot" || name == "$onehot0") {
+					require(expr, call.arguments().size() == 1);
+					auto sig = (*this)(*call.arguments()[0]);
+					int w = sig.size();
+					// x & (x - 1) clears the lowest set bit;
+					// if the result is zero, at most one bit was set
+					auto xm1 = netlist.Biop(ID($sub), sig, RTLIL::Const(1, w), false, false, w);
+					auto masked = netlist.Biop(ID($and), sig, xm1, false, false, w);
+					auto atmost1 = netlist.LogicNot(netlist.ReduceBool(masked));
+					if (name == "$onehot")
+						// exactly one: at most one AND nonzero
+						ret = netlist.LogicAnd(atmost1, netlist.ReduceBool(sig));
+					else
+						ret = atmost1;
 				} else if (name == "$past") {
 					ret = handle_past(*this, call);
 				} else if (name == "$signed" || name == "$unsigned") {

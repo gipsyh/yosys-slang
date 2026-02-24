@@ -312,4 +312,21 @@ function automatic int f10();
 endfunction
 initial $t(f10());
 
+// $onehot and $onehot0
+initial begin
+	$t($onehot(4'b0000));  // 0: no bits set
+	$t($onehot(4'b0010));  // 1: exactly one bit
+	$t($onehot(4'b0110));  // 0: two bits set
+	$t($onehot(4'b1111));  // 0: all bits set
+	$t($onehot(1'b1));     // 1: single bit
+	$t($onehot(1'b0));     // 0: single bit zero
+
+	$t($onehot0(4'b0000)); // 1: no bits set
+	$t($onehot0(4'b0010)); // 1: exactly one bit
+	$t($onehot0(4'b0110)); // 0: two bits set
+	$t($onehot0(4'b1111)); // 0: all bits set
+	$t($onehot0(1'b1));    // 1: single bit
+	$t($onehot0(1'b0));    // 1: single bit zero
+end
+
 endmodule
