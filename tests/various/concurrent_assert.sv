@@ -37,6 +37,21 @@ module m_labeled_concurrent(input clk, input rst_n, input [7:0] data);
 	my_concurrent_assert: assert property (@(posedge clk) disable iff (!rst_n) data != 8'hFF);
 endmodule
 
+module m_overlapped_implication(input clk, input a, input b);
+	// a |-> b is equivalent to !a || b
+	assert property (@(posedge clk) a |-> b);
+endmodule
+
+module m_overlapped_implication_disable_iff(input clk, input rst_n, input a, input b);
+	// Overlapped implication with disable iff
+	assert property (@(posedge clk) disable iff (!rst_n) a |-> b);
+endmodule
+
+module m_overlapped_implication_cover(input clk, input a, input b);
+	// Cover with overlapped implication
+	cover property (@(posedge clk) a |-> b);
+endmodule
+
 module m_concurrent_past (input clk, input rst_n, input [7:0] index);
     reg [7:0] regs[7:0];
     reg [7:0] past1_reg;

@@ -256,16 +256,44 @@ public:
 			propExpr = &disableExpr.expr;
 		}
 
-		// The remaining expression should be a simple assertion expression
-		if (propExpr->kind != ast::AssertionExprKind::Simple) {
-			netlist.add_diag(diag::SVAUnsupported, stmt.sourceRange);
-			return;
-		}
+		// Extract the check expression from the property
+		// Supports:
+		//   - Simple expressions: assert property (@(posedge clk) expr);
+		//   - Overlapped implication: assert property (@(posedge clk) antecedent |-> consequent);
+		enum class PropKind { Simple, OverlappedImplication } propKind;
+		const ast::Expression *checkExprLeft = nullptr;
+		const ast::Expression *checkExprRight = nullptr;
 
-		auto &simpleExpr = propExpr->as<ast::SimpleAssertionExpr>();
-
-		// We don't support repetition in simple assertions
-		if (simpleExpr.repetition.has_value()) {
+		if (propExpr->kind == ast::AssertionExprKind::Simple) {
+			auto &simpleExpr = propExpr->as<ast::SimpleAssertionExpr>();
+			if (simpleExpr.repetition.has_value()) {
+				netlist.add_diag(diag::SVAUnsupported, stmt.sourceRange);
+				return;
+			}
+			propKind = PropKind::Simple;
+			checkExprLeft = &simpleExpr.expr;
+		} else if (propExpr->kind == ast::AssertionExprKind::Binary) {
+			auto &binExpr = propExpr->as<ast::BinaryAssertionExpr>();
+			if (binExpr.op != ast::BinaryAssertionOperator::OverlappedImplication) {
+				netlist.add_diag(diag::SVAUnsupported, stmt.sourceRange);
+				return;
+			}
+			// Both sides must be simple expressions without repetition
+			if (binExpr.left.kind != ast::AssertionExprKind::Simple ||
+					binExpr.right.kind != ast::AssertionExprKind::Simple) {
+				netlist.add_diag(diag::SVAUnsupported, stmt.sourceRange);
+				return;
+			}
+			auto &lhs = binExpr.left.as<ast::SimpleAssertionExpr>();
+			auto &rhs = binExpr.right.as<ast::SimpleAssertionExpr>();
+			if (lhs.repetition.has_value() || rhs.repetition.has_value()) {
+				netlist.add_diag(diag::SVAUnsupported, stmt.sourceRange);
+				return;
+			}
+			propKind = PropKind::OverlappedImplication;
+			checkExprLeft = &lhs.expr;
+			checkExprRight = &rhs.expr;
+		} else {
 			netlist.add_diag(diag::SVAUnsupported, stmt.sourceRange);
 			return;
 		}
@@ -348,7 +376,19 @@ public:
 		cell->setParam(ID::ARGS_WIDTH, 0);
 		cell->setParam(ID::PRIORITY, --context.effects_priority);
 		cell->setPort(ID::ARGS, {});
-		cell->setPort(ID::A, netlist.ReduceBool(eval(simpleExpr.expr)));
+
+		// Evaluate the check expression
+		RTLIL::SigSpec check_sig;
+		if (propKind == PropKind::Simple) {
+			check_sig = netlist.ReduceBool(eval(*checkExprLeft));
+		} else {
+			// Overlapped implication: antecedent |-> consequent
+			// Equivalent to !antecedent || consequent
+			auto antecedent = netlist.ReduceBool(eval(*checkExprLeft));
+			auto consequent = netlist.ReduceBool(eval(*checkExprRight));
+			check_sig = netlist.LogicOr(netlist.LogicNot(antecedent), consequent);
+		}
+		cell->setPort(ID::A, check_sig);
 		transfer_attrs(netlist, stmt, cell);
 
 		// Clear timing triggers after evaluation
