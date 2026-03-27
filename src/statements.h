@@ -359,7 +359,12 @@ public:
 		cell->setParam(ID::TRG_POLARITY, clk_polarity ? RTLIL::S1 : RTLIL::S0);
 		cell->setPort(ID::TRG, clk_sig);
 
-		// Set up timing for clocked side effect cells (e.g. $past) in concurrent assertions
+		// Evaluate sampled-value system functions like $past / $stable against
+		// the concurrent assertion's own clock instead of the surrounding
+		// procedural timing context.
+		auto saved_kind = context.timing.kind;
+		auto saved_triggers = std::move(context.timing.triggers);
+		context.timing.kind = ProcessTiming::EdgeTriggered;
 		context.timing.triggers.push_back({clk_sig, clk_polarity, clocking});
 
 		// Set up the enable (disable iff inverted)
@@ -391,8 +396,8 @@ public:
 		cell->setPort(ID::A, check_sig);
 		transfer_attrs(netlist, stmt, cell);
 
-		// Clear timing triggers after evaluation
-		context.timing.triggers.clear();
+		context.timing.kind = saved_kind;
+		context.timing.triggers = std::move(saved_triggers);
 	}
 
 	RTLIL::SigSpec handle_call(const ast::CallExpression &call)
