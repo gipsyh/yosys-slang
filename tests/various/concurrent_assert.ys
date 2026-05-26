@@ -1,7 +1,7 @@
 read_slang concurrent_assert.sv
 
 # Test basic concurrent assertions exist
-select -assert-count 10 t:$check
+select -assert-count 11 t:$check
 
 # Test m_concurrent_assert: posedge clk, no disable iff
 select -assert-count 1 m_concurrent_assert/t:$check
@@ -35,3 +35,7 @@ select -assert-count 1 m_multiple_concurrent/t:$check r:TRG_POLARITY=1'0 %i
 # Test m_labeled_concurrent: labeled assertion
 select -assert-count 1 m_labeled_concurrent/t:$check
 select -assert-count 1 m_labeled_concurrent/t:$check n:*my_concurrent_assert %i
+
+# Test m_concurrent_memory_read: assertion reads an inferred memory
+select -assert-count 1 m_concurrent_memory_read/t:$check
+select -assert-count 1 m_concurrent_memory_read/t:$memrd_v2

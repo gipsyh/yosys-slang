@@ -36,3 +36,10 @@ module m_labeled_concurrent(input clk, input rst_n, input [7:0] data);
 	// Labeled concurrent assertion
 	my_concurrent_assert: assert property (@(posedge clk) disable iff (!rst_n) data != 8'hFF);
 endmodule
+
+module m_concurrent_memory_read(input clk, input rst_n, input [3:0] idx, input [7:0] expected);
+	logic [7:0] mem [0:15];
+
+	// Concurrent assertion reading an inferred memory
+	assert property (@(posedge clk) disable iff (!rst_n) mem[idx] == expected);
+endmodule
