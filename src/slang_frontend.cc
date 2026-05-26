@@ -1433,7 +1433,7 @@ RTLIL::SigSpec EvalContext::operator()(ast::Expression const &expr)
 		{
 			const ast::ElementSelectExpression &elemsel = expr.as<ast::ElementSelectExpression>();
 
-			if (netlist.is_inferred_memory(elemsel.value()) && !in_sva_expression) {
+			if (netlist.is_inferred_memory(elemsel.value())) {
 				int width = elemsel.type->getBitstreamWidth();
 				std::string id = netlist.id(elemsel.value()
 										.as<ast::ValueExpressionBase>().symbol);
